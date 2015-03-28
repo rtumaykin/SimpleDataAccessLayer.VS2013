@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005" xmlns:sdk="http://schemas.microsoft.com/developer/vstemplate-sdkextension/2010">
+  <TemplateData>
+    <Name>Simple Data Access Layer</Name>
+    <Description>Simple Data Access Layer C# Project Item</Description>
+    <Icon>SimpleDataAccessLayer.vs2013.ItemTemplate.ico</Icon>
+    <TemplateID>8c26a17c-7b35-4b38-885a-469929432caa</TemplateID>
+    <ProjectType>CSharp</ProjectType>
+    <ProjectSubType>Database</ProjectSubType>
+    <RequiredFrameworkVersion>4.0</RequiredFrameworkVersion>
+    <NumberOfParentCategoriesToRollUp>1</NumberOfParentCategoriesToRollUp>
+    <DefaultName>DataAccessLayer.dal</DefaultName>
+  </TemplateData>
+  <TemplateContent>
+    <References>
+      <Reference>
+        <Assembly>System</Assembly>
+      </Reference>
+      <Reference>
+        <Assembly>System.Configuration</Assembly>
+      </Reference>
+      <Reference>
+        <Assembly>System.Data</Assembly>
+      </Reference>
+      <Reference>
+        <Assembly>System.Xml</Assembly>
+      </Reference>
+      <Reference>
+        <Assembly>System.Xml.Linq</Assembly>
+      </Reference>
+    </References>
+    <ProjectItem ItemType="Form" ReplaceParameters="true" TargetFileName="$fileinputname$.dal">DataAccessLayer.dal</ProjectItem>
+    <ProjectItem ReplaceParameters="true" TargetFileName="$fileinputname_randomized$.tt">DataAccessLayer.tt</ProjectItem>
+  </TemplateContent>
+  <WizardExtension>
+    <Assembly>SimpleDataAccessLayer.vs2013.ItemTemplate.DeploymentWizard, Version=1.0.0.0, Culture=Neutral, PublicKeyToken=56468f4255e625d5</Assembly>
+    <FullClassName>SimpleDataAccessLayer.vs2013.ItemTemplate.DeploymentWizard.AddItemWizard</FullClassName>
+  </WizardExtension>
+
+</VSTemplate>
