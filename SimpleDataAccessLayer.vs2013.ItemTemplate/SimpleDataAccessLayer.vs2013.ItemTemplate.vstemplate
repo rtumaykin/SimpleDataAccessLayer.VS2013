@@ -30,11 +30,19 @@
       </Reference>
     </References>
     <ProjectItem ItemType="Form" ReplaceParameters="true" TargetFileName="$fileinputname$.dal">DataAccessLayer.dal</ProjectItem>
-    <ProjectItem ReplaceParameters="true" TargetFileName="$fileinputname_randomized$.tt">DataAccessLayer.tt</ProjectItem>
+    <ProjectItem ReplaceParameters="true" TargetFileName="$fileinputname$.dal\$fileinputname$.tt">DataAccessLayer.tt</ProjectItem>
   </TemplateContent>
-  <WizardExtension>
+  <!--WizardExtension>
     <Assembly>SimpleDataAccessLayer.vs2013.ItemTemplate.DeploymentWizard, Version=1.0.0.0, Culture=Neutral, PublicKeyToken=56468f4255e625d5</Assembly>
     <FullClassName>SimpleDataAccessLayer.vs2013.ItemTemplate.DeploymentWizard.AddItemWizard</FullClassName>
+  </WizardExtension-->
+  <WizardExtension>
+    <Assembly>NuGet.VisualStudio.Interop, Version=1.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</Assembly>
+    <FullClassName>NuGet.VisualStudio.TemplateWizard</FullClassName>
   </WizardExtension>
-
+  <WizardData>
+    <packages repository="extension" repositoryId="278ecd27-bc3b-4e5d-98ca-1591a71a1a65">
+      <package id="Microsoft.SqlServer.Types" version="11.0.2" />
+    </packages>
+  </WizardData>
 </VSTemplate>

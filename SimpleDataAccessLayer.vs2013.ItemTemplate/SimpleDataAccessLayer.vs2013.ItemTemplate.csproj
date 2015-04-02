@@ -74,22 +74,24 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="DataAccessLayer.dal">
+    <Content Include="DataAccessLayer.dal">
       <SubType>Designer</SubType>
-    </None>
+    </Content>
   </ItemGroup>
   <ItemGroup>
-    <None Include="DataAccessLayer.tt">
+    <Content Include="DataAccessLayer.tt">
       <Parameters>
         &lt;%3fxml version="1.0" encoding="utf-16"%3f&gt;
         &lt;ArrayOfParameterStorage xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" /&gt;
       </Parameters>
-    </None>
+    </Content>
     <None Include="SimpleDataAccessLayer.vs2013.ItemTemplate.ico" />
   </ItemGroup>
   <ItemGroup>
     <VSTemplate Include="SimpleDataAccessLayer.vs2013.ItemTemplate.vstemplate">
       <SubType>Designer</SubType>
+      <OutputSubPath>Data</OutputSubPath>
+      <Culture>127</Culture>
     </VSTemplate>
   </ItemGroup>
   <ItemGroup>
