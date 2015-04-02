@@ -250,6 +250,10 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Packages\Microsoft.SqlServer.Types.11.0.2.nupkg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
     <None Include="source.extension.vsixmanifest">
       <SubType>Designer</SubType>
     </None>
@@ -271,12 +275,6 @@
     <Folder Include="Templates\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SimpleDataAccessLayer.vs2013.ItemTemplate.DeploymentWizard\SimpleDataAccessLayer.vs2013.ItemTemplate.DeploymentWizard.csproj">
-      <Project>{262093C3-1A89-4330-86E7-55039313D966}</Project>
-      <Name>SimpleDataAccessLayer.vs2013.ItemTemplate.DeploymentWizard</Name>
-      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
-      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
-    </ProjectReference>
     <ProjectReference Include="..\SimpleDataAccessLayer.vs2013.ItemTemplate\SimpleDataAccessLayer.vs2013.ItemTemplate.csproj">
       <Project>{26F25B29-3659-41AD-A73A-1FC06C426939}</Project>
       <Name>SimpleDataAccessLayer.vs2013.ItemTemplate</Name>

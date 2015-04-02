@@ -23,7 +23,7 @@ try
 	{
 #>
 // Main namespace
-namespace <#= _helper.Config.Namespace #> 
+namespace <#= string.IsNullOrWhiteSpace(_helper.Config.Namespace) ? "___not_configured____" : _helper.Config.Namespace #> 
 {
 	public class ExecutionScope : global::System.IDisposable
 	{
@@ -362,9 +362,13 @@ namespace <#= _helper.Config.Namespace + ".Executables." + _currentNamespace #>
 	}
 <#			
 		}
+        // Close the namespaces only if there is at least one enum
+		if(!_firstNamespace)
+        {
 #>
-}
+} //
 <#
+        }
 		/* Enums */
 		_currentNamespace = "";
 		_firstNamespace = true;
