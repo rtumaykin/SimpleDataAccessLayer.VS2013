@@ -12,7 +12,7 @@ namespace SimpleDataAccessLayer_vs2013
 
 		public static string ClrTypeName(string sqlTypeName)
 		{
-			var typeMapping = new Dictionary<string, string>()
+			var typeMapping = new Dictionary<string, string>
 			{
 				{"bigint", "System.Int64?"},
 				{"binary", "System.Byte[]"},
@@ -64,9 +64,9 @@ namespace SimpleDataAccessLayer_vs2013
 			return rgx.Replace(name, "_");
 		}
 
-		public static string SqlDbTypeName(string sqlTypeName)
+		public static string SqlDbTypeName(string sqlTypeName, bool isTableType = false)
 		{
-			var sqlDbTypeMapping = new Dictionary<string, string>()
+		    var sqlDbTypeMapping = new Dictionary<string, string>()
 			{
 				{"bigint", "BigInt"},
 				{"binary", "Binary"},
@@ -99,10 +99,9 @@ namespace SimpleDataAccessLayer_vs2013
 				{"sql_variant", "Variant"},
 				{"xml", "Xml"}
 			};
-			if (sqlDbTypeMapping.ContainsKey(sqlTypeName))
-				return sqlDbTypeMapping[sqlTypeName];
-			else
-				return null;
+		    return sqlDbTypeMapping.ContainsKey(sqlTypeName)
+		        ? sqlDbTypeMapping[sqlTypeName]
+		        : (isTableType ? "Structured" : null);
 		}
 	}
 }

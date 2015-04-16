@@ -143,19 +143,21 @@ namespace SimpleDataAccessLayer_vs2013
 					cmd.CommandText = "sp_executesql";
 
 					const string stmt = @"
-					SELECT 
-						p.[name] AS ParameterName,
-						p.[max_length] AS MaxByteLength,
-						p.[precision] AS [Precision],
-						p.[scale] AS Scale,
-						p.[is_output] AS IsOutputParameter,
-						ISNULL(ut.name, t.[name]) AS TypeName
-					FROM sys.[parameters] p
-						INNER JOIN sys.[types] t
-							ON	t.[user_type_id] = p.[user_type_id]
-						LEFT OUTER JOIN sys.[types] ut
-							ON	ut.[user_type_id] = t.[system_type_id]
-					WHERE p.[object_id] = OBJECT_ID(@ObjectName);
+                            SELECT 
+	                            p.[name] AS ParameterName,
+	                            p.[max_length] AS MaxByteLength,
+	                            p.[precision] AS [Precision],
+	                            p.[scale] AS Scale,
+	                            p.[is_output] AS IsOutputParameter,
+	                            ISNULL(st.name, t.[name]) AS TypeName,
+	                            SCHEMA_NAME(t.[schema_id]) AS TypeSchemaName,
+	                            t.is_table_type
+                            FROM sys.[parameters] p
+	                            INNER JOIN sys.[types] t
+		                            ON	t.[user_type_id] = p.[user_type_id]
+	                            LEFT OUTER JOIN sys.[types] st
+		                            ON	st.user_type_id = p.[system_type_id]
+                            WHERE p.[object_id] = OBJECT_ID(@ObjectName);
 					";
 
 					cmd.Parameters.AddWithValue("@stmt", stmt);
@@ -173,13 +175,19 @@ namespace SimpleDataAccessLayer_vs2013
 							var precision = reader.GetSqlByte(2).Value;
 							var scale = reader.GetSqlByte(3).Value;
 							var isOutputParameter = reader.GetSqlBoolean(4).Value;
+						    var schemaName = reader.GetSqlString(6).Value;
+						    var isTableType = reader.GetSqlBoolean(7).Value;
+
+                            // make sure that if it is a custom type and we can't find base type, we use fully qualified name
+						    sqlTypeName = schemaName == "sys" ? schemaName : string.Format("[{0}].[{1}]", schemaName, sqlTypeName);
 
 							var clrTypeName = Tools.ClrTypeName(sqlTypeName);
 
-							if (string.IsNullOrWhiteSpace(clrTypeName))
-								continue; // later I will rewrite it 
+						    if (!string.IsNullOrWhiteSpace(clrTypeName) || isTableType)
+						    {
+                                retValue.Add(new ProcedureParameter(parameterName, maxByteLength, precision, scale, isOutputParameter, sqlTypeName));
+                            }
 
-							retValue.Add(new ProcedureParameter(parameterName, maxByteLength, precision, scale, isOutputParameter, sqlTypeName));
 						}
 					}
 				}

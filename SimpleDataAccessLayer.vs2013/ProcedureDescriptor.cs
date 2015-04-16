@@ -16,6 +16,8 @@ namespace SimpleDataAccessLayer_vs2013
 
 	    public string SqlTypeName { get; private set; }
 
+        public bool isTableType { get; private set; }
+
 	    public string ClrTypeName { get { return Tools.ClrTypeName(SqlTypeName); } }
 
 		public ProcedureParameter(string parameterName, int maxByteLength, byte precision, byte scale, bool isOutputParameter, string sqlTypeName)
