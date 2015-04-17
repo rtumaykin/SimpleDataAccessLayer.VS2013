@@ -369,7 +369,7 @@ namespace SimpleDataAccessLayer_vs2013
 	            code += string.Format("public class {0}Row {{\r{1}\r}}", Tools.CleanName(tableType.Name), GetCodeForTableTypeColumns(tableType, columns));
 	            code +=
 	                string.Format(
-	                    "public class {0} : List<{0}Row> {{public {0} (IEnumerable<{0}Row> collection) : base(collection){{}}\rinternal DataTable GetDataTable() {{{1}}}\r}}",
+                        "public class {0} : global::System.Collections.Generic.List<{0}Row> {{public {0} (global::System.Collections.Generic.IEnumerable<{0}Row> collection) : base(collection){{}}\rinternal global::System.Data.DataTable GetDataTable() {{{1}}}\r}}",
 	                    Tools.CleanName(tableType.Name), GetCodeForDataTableConversion(tableType, columns));
 	        }
 
@@ -380,7 +380,7 @@ namespace SimpleDataAccessLayer_vs2013
 
 	    private string GetCodeForDataTableConversion(TableType tableType, IList<TableTypeColumn> columns)
 	    {
-            var code = "var dt = new DataTable();\r";
+            var code = "var dt = new global::System.Data.DataTable();\r";
 	        code += string.Join("\r",
 	            columns.Select(
 	                column => string.Format("dt.Columns.Add(\"{0}\", typeof({1}));", column.ColumnName, column.ClrTypeName)));
@@ -396,7 +396,7 @@ namespace SimpleDataAccessLayer_vs2013
             var code = string.Join("\r", columns.Select(
 	            column => string.Format("public global::{0} {1} {{ get; private set; }}\r", column.ClrTypeName, Tools.CleanName(column.ColumnName))));
 
-	        code += string.Format("public {0}({1}) {{{2}}}\r", Tools.CleanName(tableType.Name),
+	        code += string.Format("public {0}Row({1}) {{{2}}}\r", Tools.CleanName(tableType.Name),
                  string.Join(", ", columns.Select(column=>string.Format("global::{0} {1}", column.ClrTypeName, column.ColumnName.Substring(0, 1).ToLower() + column.ColumnName.Substring(1)))),
                  string.Join("\r", columns.Select(column => string.Format("this.{0} = {1};", column.ColumnName, column.ColumnName.Substring(0, 1).ToLower() + column.ColumnName.Substring(1))))
                 );

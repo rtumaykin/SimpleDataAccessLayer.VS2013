@@ -24,7 +24,7 @@ namespace SimpleDataAccessLayer_vs2013
 	        {
                 // if this is a table type, then the CLR Type name must already be defined. It all should follow the same rules as any other object. 
                 // I.e "types", then schema name as a part of the namespace, then class name equals to the type name 
-	            return IsTableType ?  Tools.ClrTypeName(SqlTypeName);
+	            return IsTableType ? "System.Object" : Tools.ClrTypeName(SqlTypeName);
 	            
 	        }
 	    }

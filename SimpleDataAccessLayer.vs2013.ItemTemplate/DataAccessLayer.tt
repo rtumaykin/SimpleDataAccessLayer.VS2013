@@ -93,6 +93,8 @@ namespace <#= string.IsNullOrWhiteSpace(_helper.Config.Namespace) ? "___not_conf
 
 	}
 }
+<#= _helper.GetCodeForTableValuedParameters() #>
+
 <#
 		string _currentNamespace = "";
 		bool _firstNamespace = true;
