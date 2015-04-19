@@ -271,30 +271,55 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
 
         private string GetExecuteBodyCode(bool async, IList<ProcedureParameter> parameters, IList<List<ProcedureResultSetColumn>> recordsets, SimpleDataAccessLayer_vs2013.Procedure proc)
         {
-            var code = 
+            var code =
                 string.Format("var retValue = new {0}();", proc.Alias ?? proc.ProcedureName) +
                 "{" +
                 "   var retryCycle = 0;" +
                 "   while (true) {" +
-                string.Format("       global::System.Data.SqlClient.SqlConnection conn = executionScope == null ? new global::System.Data.SqlClient.SqlConnection(global::{0}.ExecutionScope.ConnectionString) : executionScope.Transaction.Connection;", _config.Namespace) +
+                string.Format(
+                    "       global::System.Data.SqlClient.SqlConnection conn = executionScope == null ? new global::System.Data.SqlClient.SqlConnection(global::{0}.ExecutionScope.ConnectionString) : executionScope.Transaction.Connection;",
+                    _config.Namespace) +
                 "       try {" +
                 "           if (conn.State != global::System.Data.ConnectionState.Open) {" +
                 "               if (executionScope == null) {" +
-				string.Format("				{0} conn.Open{1}();", async ? "await" : "", async ? "Async" : "") +
-				"			}" +
-				"			else {" +
-				"				retryCycle = int.MaxValue; " +
-				"				throw new global::System.Exception(\"Execution Scope must have an open connection.\"); " +
-				"			}" +
-				"		}" +
+                string.Format("				{0} conn.Open{1}();", async ? "await" : "", async ? "Async" : "") +
+                "			}" +
+                "			else {" +
+                "				retryCycle = int.MaxValue; " +
+                "				throw new global::System.Exception(\"Execution Scope must have an open connection.\"); " +
+                "			}" +
+                "		}" +
                 "	using (global::System.Data.SqlClient.SqlCommand cmd = _conn.CreateCommand()) {" +
-				"			cmd.CommandType = global::System.Data.CommandType.StoredProcedure;" +
-				"			if (executionScope != null && executionScope.Transaction != null)" +
-				"				cmd.Transaction = executionScope.Transaction;" +
-				string.Format("			cmd.CommandText = \"{0}.{1}\";", Tools.QuoteName(proc.Schema), Tools.QuoteName(proc.ProcedureName)) +
+                "			cmd.CommandType = global::System.Data.CommandType.StoredProcedure;" +
+                "			if (executionScope != null && executionScope.Transaction != null)" +
+                "				cmd.Transaction = executionScope.Transaction;" +
+                string.Format("			cmd.CommandText = \"{0}.{1}\";", Tools.QuoteName(proc.Schema),
+                    Tools.QuoteName(proc.ProcedureName)) +
+                string.Join("", parameters.Select(p => p.IsTableType
+                    ? string.Format(
+                        "cmd.Parameters.Add(new global::System.Data.SqlClient.SqlParameter(\"@{0}\", global::System.Data.SqlDbType.Structured) {{TypeName = \"{1}\", Value = {2}.GetDataTable()}}",
+                        p.ParameterName, p.SqlTypeName, p.ParameterName.Substring(0, 1) + p.ParameterName.Substring(1)) :
 
+                    string.Format("cmd.Parameters.Add(new global::System.Data.SqlClient.SqlParameter(\"@{0}\", global::System.Data.SqlDbType.{1}, {2}, {3}, true, {4}, {5}, null, global::System.Data.DataRowVersion.Default, {6}){{{7}}}",
+                        p.ParameterName,
+                        Tools.SqlDbTypeName(p.SqlTypeName),
+                        ("nchar nvarchar".Split(' ').Contains(p.SqlTypeName) && p.MaxByteLength != -1) ? (p.MaxByteLength / 2) : p.MaxByteLength,
+                        p.IsOutputParameter ? "Output" : "Input",
+                        p.Precision,
+                        p.Scale,
+                        p.ParameterName.Substring(0, 1) + p.ParameterName.Substring(1),
+                        "geography hierarchyid geometry".Split(' ').Contains(p.SqlTypeName) ? string.Format("UdtTypeName = \"{0}\"", p.SqlTypeName) : ""
+                    ))) +
+                    "cmd.Parameters.Add(new global::System.Data.SqlClient.SqlParameter(\"@ReturnValue\", global::System.Data.SqlDbType.Int, 4, global::System.Data.ParameterDirection.ReturnValue, true, 0, 0, null, global::System.Data.DataRowVersion.Default, global::System.DBNull.Value));" +
+                    (recordsets.Count > 0 ? 
+                        string.Format("{0} cmd.ExecuteNonQuery{1}();",
+                            async ? "await" : "",
+                            async ? "Async" : "") : 
+                        "")
                 ;
-                
+
+            return code;
+
         }
 
         private string GetRecordsetsDefinitions(IList<List<ProcedureResultSetColumn>> recordsets)
