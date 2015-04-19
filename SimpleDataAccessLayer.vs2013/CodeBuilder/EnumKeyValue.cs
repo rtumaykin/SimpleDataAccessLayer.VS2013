@@ -1,12 +1,12 @@
-﻿namespace SimpleDataAccessLayer_vs2013
+﻿namespace SimpleDataAccessLayer_vs2013.CodeBuilder
 {
-	public class EnumData
+	public class EnumKeyValue
 	{
 	    public string Key { get; private set; }
 
 	    public long Value { get; private set; }
 
-	    public EnumData(string key, long value)
+	    public EnumKeyValue(string key, long value)
 		{
 			Key = key;
 			Value = value;

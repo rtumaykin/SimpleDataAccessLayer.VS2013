@@ -158,6 +158,12 @@
     <Compile Include="ApplicationConnectionTab.Designer.cs">
       <DependentUpon>ApplicationConnectionTab.cs</DependentUpon>
     </Compile>
+    <Compile Include="CodeBuilder\Common.cs" />
+    <Compile Include="CodeBuilder\Enum.cs" />
+    <Compile Include="CodeBuilder\Procedure.cs" />
+    <Compile Include="CodeBuilder\ProcedureParameter.cs" />
+    <Compile Include="CodeBuilder\ProcedureResultSetColumn.cs" />
+    <Compile Include="CodeBuilder\TableValuedParameter.cs" />
     <Compile Include="CustomDirectiveProcessor.cs" />
     <Compile Include="DalConfig.cs" />
     <Compile Include="DatabaseSelectionTab.cs">
@@ -174,7 +180,7 @@
     </Compile>
     <Compile Include="EditorFactory.cs" />
     <Compile Include="EditorPane.cs" />
-    <Compile Include="EnumDescriptor.cs" />
+    <Compile Include="CodeBuilder\EnumKeyValue.cs" />
     <Compile Include="EnumsTab.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -197,7 +203,7 @@
     </Compile>
     <Compile Include="NativeMethods.cs" />
     <Compile Include="PkgCmdID.cs" />
-    <Compile Include="ProcedureDescriptor.cs" />
+    <Compile Include="CodeBuilder\ProcedureInfo.cs" />
     <Compile Include="ProceduresTab.cs">
       <SubType>UserControl</SubType>
     </Compile>

@@ -22,78 +22,10 @@ try
 	else
 	{
 #>
-// Main namespace
-namespace <#= string.IsNullOrWhiteSpace(_helper.Config.Namespace) ? "___not_configured____" : _helper.Config.Namespace #> 
-{
-	public class ExecutionScope : global::System.IDisposable
-	{
-		internal static global::System.Collections.Generic.List<int> retryableErrors = new global::System.Collections.Generic.List<int> 
-		{
-			53, 601, 615, 913, 921, 922, 923, 924, 926, 927, 941, 955, 956, 983, 976, 978, 979, 982, 983, 1204, 1205, 1214, 1222, 1428, 35201
-		};
+<#= _helper.GetCode() #>
 
-		private global::System.Data.SqlClient.SqlTransaction transaction;
-		public global::System.Data.SqlClient.SqlTransaction Transaction
-		{
-			get
-			{
-				return transaction;
-			}
-		}
 
-		private global::System.Data.SqlClient.SqlConnection connection;
 
-		public ExecutionScope()
-		{
-			this.connection = new global::System.Data.SqlClient.SqlConnection(ConnectionString);
-			this.connection.Open();
-			this.transaction = connection.BeginTransaction();
-		}
-
-		public void Commit()
-		{
-			if (this.transaction != null)
-				this.transaction.Commit();
-		}
-
-		public void Rollback()
-		{
-			if (this.transaction != null)
-				this.transaction.Rollback();
-		}
-		public void Dispose()
-		{
-			if (this.transaction != null)
-			{
-				this.transaction.Dispose();
-			}
-			if (this.connection != null && this.connection.State != System.Data.ConnectionState.Closed)
-			{
-				this.connection.Close();
-				this.connection.Dispose();
-			}
-		}
-		
-		private static global::System.String connectionString;
-		public static global::System.String ConnectionString
-		{
-			get
-			{
-				global::System.Threading.LazyInitializer.EnsureInitialized(
-					ref connectionString,
-					() => global::System.Configuration.ConfigurationManager.ConnectionStrings["<#= _helper.Config.ApplicationConnectionString #>"].ConnectionString
-				);
-				return connectionString;
-			}
-			set
-			{
-				connectionString = value;
-			}
-		}
-
-	}
-}
-<#= _helper.GetCodeForTableValuedParameters() #>
 
 <#
 		string _currentNamespace = "";
