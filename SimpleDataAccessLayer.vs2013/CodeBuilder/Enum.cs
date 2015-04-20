@@ -6,7 +6,11 @@ using System.Linq;
 
 namespace SimpleDataAccessLayer_vs2013.CodeBuilder
 {
+#if DEBUG 
+    public class Enum
+#else 
     internal class Enum
+#endif
     {
         private readonly DalConfig _config;
         private readonly string _designerConnectionString;
@@ -17,7 +21,7 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
             _designerConnectionString = designerConnectionString;
 		}
 
-        internal string GetCode()
+        public string GetCode()
         {
             if (_config == null || _config.Enums == null)
                 return "";
@@ -36,7 +40,7 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
                     .Select(
                         e =>
                             string.Format("public enum {0}{{{1}}}",
-                                Tools.CleanName(e.Alias ?? e.TableName), GetEnumBodyCode(e))));
+                                Tools.CleanName(string.IsNullOrWhiteSpace(e.Alias) ? e.TableName : e.Alias), GetEnumBodyCode(e))));
         }
 
         private string GetEnumBodyCode(SimpleDataAccessLayer_vs2013.Enum enumInfo)

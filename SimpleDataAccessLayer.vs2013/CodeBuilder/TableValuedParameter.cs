@@ -5,7 +5,12 @@ using System.Linq;
 
 namespace SimpleDataAccessLayer_vs2013.CodeBuilder
 {
+
+#if DEBUG 
+    public class TableValuedParameter
+#else 
     internal class TableValuedParameter
+#endif
     {
         private readonly DalConfig _config;
         private readonly string _designerConnectionString;
@@ -23,35 +28,23 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
             if (tableTypes.Count == 0)
                 return "";
 
-            var code = "";
-
-            string nameSpace = null;
-            foreach (var tableType in tableTypes)
-            {
-                if (tableType.SchemaName != nameSpace)
-                {
-                    // first namespace
-                    if (string.IsNullOrWhiteSpace(nameSpace))
-                    {
-                        code += "}\r";
-                    }
-                    nameSpace = tableType.SchemaName;
-                    code += string.Format("namespace {0}.{1}.{2}\r{{\r", _config.Namespace, "TableVariables",
-                        Tools.CleanName(nameSpace));
-                }
-
-                var columns = GetTableTypeColumns(tableType);
-
-                code += string.Format("public class {0}Row {{\r{1}\r}}", Tools.CleanName(tableType.Name), GetCodeForTableTypeColumns(tableType, columns));
-                code +=
-                    string.Format(
-                        "public class {0} : global::System.Collections.Generic.List<{0}Row> {{public {0} (global::System.Collections.Generic.IEnumerable<{0}Row> collection) : base(collection){{}}\rinternal global::System.Data.DataTable GetDataTable() {{{1}}}\r}}",
-                        Tools.CleanName(tableType.Name), GetCodeForDataTableConversion(columns));
-            }
-
-            code += "}\r";
-
-            return code;
+            return string.Join("", tableTypes.Select(tt => string.Format("namespace {0}.{1}.{2} {{{3}}}",
+                _config.Namespace,
+                "TableVariables",
+                Tools.CleanName(tt.SchemaName),
+                string.Join("",
+                    tableTypes.Where(ttn => ttn.SchemaName == tt.SchemaName)
+                        .Select(ttn =>
+                        {
+                            var columns = GetTableTypeColumns(ttn);
+                            return string.Format(
+                                "public class {0}Row {{{1}}}" +
+                                "public class {0} : global::System.Collections.Generic.List<{0}Row> {{public {0} (global::System.Collections.Generic.IEnumerable<{0}Row> collection) : base(collection){{}}internal global::System.Data.DataTable GetDataTable() {{{2}}}}}",
+                                Tools.CleanName(ttn.Name),
+                                GetCodeForTableTypeColumns(ttn, columns),
+                                GetCodeForDataTableConversion(columns));
+                        }))
+                )));
         }
 
         private string GetCodeForDataTableConversion(IList<TableTypeColumn> columns)

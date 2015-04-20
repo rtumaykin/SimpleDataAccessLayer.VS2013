@@ -16,18 +16,9 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
 
         public bool IsTableType { get; private set; }
 
-        public string ClrTypeName
-        {
-            get
-            {
-                // if this is a table type, then the CLR Type name must already be defined. It all should follow the same rules as any other object. 
-                // I.e "types", then schema name as a part of the namespace, then class name equals to the type name 
-                return IsTableType ? "System.Object" : Tools.ClrTypeName(SqlTypeName);
-	            
-            }
-        }
+        public string ClrTypeName { get; private set; }
 
-        public ProcedureParameter(string parameterName, int maxByteLength, byte precision, byte scale, bool isOutputParameter, string sqlTypeName, bool isTableType)
+        public ProcedureParameter(string parameterName, int maxByteLength, byte precision, byte scale, bool isOutputParameter, string sqlTypeName, bool isTableType, string clrTypeName)
         {
             ParameterName = parameterName;
             MaxByteLength = maxByteLength;
@@ -36,6 +27,7 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
             IsOutputParameter = isOutputParameter;
             SqlTypeName = sqlTypeName;
             IsTableType = isTableType;
+            ClrTypeName = clrTypeName;
         }
     }
 }

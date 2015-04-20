@@ -1,6 +1,10 @@
 ﻿namespace SimpleDataAccessLayer_vs2013.CodeBuilder
 {
+#if DEBUG 
+    public class Common
+#else 
     internal class Common
+#endif
     {
         private readonly DalConfig _config;
         private readonly string _designerConnectionString;
@@ -11,7 +15,7 @@
             _designerConnectionString = designerConnectionString;
 		}
 
-        internal string GetCode()
+        public string GetCode()
         {
             if (_config.Enums.Count == 0 && _config.Procedures.Count == 0)
                 return "/* nothing */";

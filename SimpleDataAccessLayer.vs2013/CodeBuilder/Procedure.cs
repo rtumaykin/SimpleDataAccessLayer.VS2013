@@ -11,10 +11,14 @@ using Microsoft.SqlServer.Management.Common;
 
 namespace SimpleDataAccessLayer_vs2013.CodeBuilder
 {
+#if DEBUG 
+    public class Procedure
+#else 
     internal class Procedure
+#endif
     {
 
-                private readonly DalConfig _config;
+        private readonly DalConfig _config;
         private readonly string _designerConnectionString;
 
         public Procedure(DalConfig config, string designerConnectionString)
@@ -85,7 +89,8 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
                                         ? sqlTypeName
                                         : string.Format("{0}.{1}", Tools.QuoteName(schemaName),
                                             Tools.QuoteName(sqlTypeName)),
-                                    isTableType));
+                                    isTableType,
+                                    clrTypeName));
                             }
                         }
                     }
@@ -218,7 +223,7 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
             return new List<List<ProcedureResultSetColumn>> { firstRecordset };
         }
 
-        internal string GetCode()
+        public string GetCode()
         {
             if (_config == null || _config.Procedures == null)
                 return "";
@@ -236,7 +241,7 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
                     .Select(
                         proc =>
                             string.Format("public class {0}{{{1}}}",
-                                Tools.CleanName(proc.Alias ?? proc.ProcedureName), GetProcedureBodyCode(proc))));
+                                Tools.CleanName(string.IsNullOrWhiteSpace(proc.Alias) ? proc.ProcedureName : proc.Alias), GetProcedureBodyCode(proc))));
         }
 
         private string GetProcedureBodyCode(SimpleDataAccessLayer_vs2013.Procedure proc)
@@ -255,7 +260,7 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
             return string.Join("",
                 new[] {true, false}.Select(
                     async =>
-                        string.Format("public static {0}{1}{2} Execute{3} ({4}, {5}.ExecutionScope scope = null){{{6}}}",
+                        string.Format("public static {0}{1}{2} Execute{3} ({4}, {5}.ExecutionScope executionScope = null){{{6}}}/*end*/",
                             async ? "async global::System.Threading.Tasks.Task<" : "",
                             Tools.CleanName(proc.ProcedureName),
                             async ? ">" : "",
@@ -272,7 +277,7 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
         private string GetExecuteBodyCode(bool async, IList<ProcedureParameter> parameters, IList<List<ProcedureResultSetColumn>> recordsets, SimpleDataAccessLayer_vs2013.Procedure proc)
         {
             var code =
-                string.Format("var retValue = new {0}();", proc.Alias ?? proc.ProcedureName) +
+                string.Format("var retValue = new {0}();", string.IsNullOrWhiteSpace(proc.Alias) ? proc.ProcedureName : proc.Alias) +
                 "{" +
                 "   var retryCycle = 0;" +
                 "   while (true) {" +
@@ -289,7 +294,7 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
                 "				throw new global::System.Exception(\"Execution Scope must have an open connection.\"); " +
                 "			}" +
                 "		}" +
-                "	using (global::System.Data.SqlClient.SqlCommand cmd = _conn.CreateCommand()) {" +
+                "	using (global::System.Data.SqlClient.SqlCommand cmd = conn.CreateCommand()) {" +
                 "			cmd.CommandType = global::System.Data.CommandType.StoredProcedure;" +
                 "			if (executionScope != null && executionScope.Transaction != null)" +
                 "				cmd.Transaction = executionScope.Transaction;" +
@@ -297,29 +302,110 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
                     Tools.QuoteName(proc.ProcedureName)) +
                 string.Join("", parameters.Select(p => p.IsTableType
                     ? string.Format(
-                        "cmd.Parameters.Add(new global::System.Data.SqlClient.SqlParameter(\"@{0}\", global::System.Data.SqlDbType.Structured) {{TypeName = \"{1}\", Value = {2}.GetDataTable()}}",
-                        p.ParameterName, p.SqlTypeName, p.ParameterName.Substring(0, 1) + p.ParameterName.Substring(1)) :
-
-                    string.Format("cmd.Parameters.Add(new global::System.Data.SqlClient.SqlParameter(\"@{0}\", global::System.Data.SqlDbType.{1}, {2}, {3}, true, {4}, {5}, null, global::System.Data.DataRowVersion.Default, {6}){{{7}}}",
+                        "cmd.Parameters.Add(new global::System.Data.SqlClient.SqlParameter(\"@{0}\", global::System.Data.SqlDbType.Structured) {{TypeName = \"{1}\", Value = {2}.GetDataTable()}});",
+                        p.ParameterName, p.SqlTypeName, p.ParameterName.Substring(0, 1) + p.ParameterName.Substring(1))
+                    : string.Format(
+                        "cmd.Parameters.Add(new global::System.Data.SqlClient.SqlParameter(\"@{0}\", global::System.Data.SqlDbType.{1}, {2}, global::System.Data.ParameterDirection.{3}, true, {4}, {5}, null, global::System.Data.DataRowVersion.Default, {6}){{{7}}});",
                         p.ParameterName,
                         Tools.SqlDbTypeName(p.SqlTypeName),
-                        ("nchar nvarchar".Split(' ').Contains(p.SqlTypeName) && p.MaxByteLength != -1) ? (p.MaxByteLength / 2) : p.MaxByteLength,
+                        ("nchar nvarchar".Split(' ').Contains(p.SqlTypeName) && p.MaxByteLength != -1)
+                            ? (p.MaxByteLength/2)
+                            : p.MaxByteLength,
                         p.IsOutputParameter ? "Output" : "Input",
                         p.Precision,
                         p.Scale,
                         p.ParameterName.Substring(0, 1) + p.ParameterName.Substring(1),
-                        "geography hierarchyid geometry".Split(' ').Contains(p.SqlTypeName) ? string.Format("UdtTypeName = \"{0}\"", p.SqlTypeName) : ""
-                    ))) +
-                    "cmd.Parameters.Add(new global::System.Data.SqlClient.SqlParameter(\"@ReturnValue\", global::System.Data.SqlDbType.Int, 4, global::System.Data.ParameterDirection.ReturnValue, true, 0, 0, null, global::System.Data.DataRowVersion.Default, global::System.DBNull.Value));" +
-                    (recordsets.Count > 0 ? 
-                        string.Format("{0} cmd.ExecuteNonQuery{1}();",
-                            async ? "await" : "",
-                            async ? "Async" : "") : 
-                        "")
+                        "geography hierarchyid geometry".Split(' ').Contains(p.SqlTypeName)
+                            ? string.Format("UdtTypeName = \"{0}\"", p.SqlTypeName)
+                            : ""
+                        ))) +
+                "cmd.Parameters.Add(new global::System.Data.SqlClient.SqlParameter(\"@ReturnValue\", global::System.Data.SqlDbType.Int, 4, global::System.Data.ParameterDirection.ReturnValue, true, 0, 0, null, global::System.Data.DataRowVersion.Default, global::System.DBNull.Value));" +
+                (recordsets.Count > 0
+                    ? string.Format("{0} cmd.ExecuteNonQuery{1}();",
+                        async ? "await" : "",
+                        async ? "Async" : "")
+                    : string.Format(
+                        "using (global::System.Data.SqlClient.SqlDataReader reader = {0} cmd.ExecuteReader{1}()){{{2}}}",
+                        async ? "await" : "",
+                        async ? "Async" : "",
+                        MapRecordsetResults(async, recordsets)
+                        )) +
+                string.Format("retValue.Parameters = new ParametersCollection({0});", string.Join(
+                    ", ",
+                    parameters.Select(
+                        parameter =>
+                            string.Format(
+                                "cmd.Parameters[\"@{0}\"].Value == global::System.DBNull.Value ? null : (global::{1}) cmd.Parameters[\"@{0}\"].Value",
+                                parameter.ParameterName,
+                                parameter.ClrTypeName)))) +
+                "retValue.ReturnValue = (global::System.Int32) cmd.Parameters[\"@ReturnValue\"].Value; " +
+                "return retValue;" +
+                "}" +
+                "}" +
+                "catch (global::System.Data.SqlClient.SqlException e) {" +
+                "if (retryCycle++ > 9 || !ExecutionScope.RetryableErrors.Contains(e.Number))" +
+                "   throw;" +
+                "global::System.Threading.Thread.Sleep(1000);" +
+                "}" +
+                "finally {" +
+                "if (executionScope == null &&  conn != null) {" +
+                "((global::System.IDisposable) conn).Dispose();" +
+                "}" +
+                "}" +
+                "}" +
+//                "}" +
+                "}"
                 ;
 
             return code;
 
+        }
+
+        private string MapRecordsetResults(bool @async, IList<List<ProcedureResultSetColumn>> recordsets)
+        {
+            var code = "";
+            for (var rsNo = 0; rsNo < recordsets.Count; rsNo++)
+            {
+                var recordset = recordsets[rsNo];
+                var internalCode = string.Format("retValue.Recordset{0} = new global::System.Collections.Generic.List<Record{0}>(); while ({1} reader.Read{1}()) {{{2}}}",
+                    async ? "await" : "",
+                    async ? "Async" : "",
+                    string.Format("retValue.Recordset{0}.Add(new Record{0}({1}));",
+                        rsNo,
+                        MapRecord(async, recordset))
+                    );
+                if (rsNo > 0)
+                {
+                    internalCode = string.Format("if ({0} reader.NextResult{1}()){{{2}}}",
+                        async ? "await" : "",
+                        async ? "Async" : "",
+                        internalCode);
+                }
+
+                code += internalCode;
+            }
+
+
+            return code;
+        }
+
+        private string MapRecord(bool async, List<ProcedureResultSetColumn> recordset)
+        {
+            var code = "";
+
+            for (var colNo = 0; colNo < recordset.Count; colNo ++)
+            {
+                var column = recordset[colNo];
+                code += string.Format("{4} reader.IsDBNull({0}) ? null : {1} reader.GetFieldValue<global::{3}>{2}({0})",
+                    colNo,
+                    async ? "await" : "",
+                    async ? "Async" : "",
+                    column.ClrTypeName,
+                    colNo > 0 ? "," : ""
+                    );
+            }
+
+            return code;
         }
 
         private string GetRecordsetsDefinitions(IList<List<ProcedureResultSetColumn>> recordsets)
@@ -330,17 +416,17 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
             {
                 var recordset = recordsets[rsNo];
 
-                code += string.Format("public class Record{0} {{{1}public Record{0}({2}){{{3}}}}}public global::System.Collections.Generic.List<Record{0}>{{get;private set;}}",
+                code += string.Format("public class Record{0} {{{1}public Record{0}({2}){{{3}}}}}public global::System.Collections.Generic.List<Record{0}> Recordset{0}{{get;private set;}}",
                     rsNo,
                     string.Join("",
                         recordset.Select(
                             column =>
                                 string.Format("public global::{0} {1} {{get; private set;}}", column.ClrTypeName,
                                     Tools.CleanName(column.ColumnName)))),
-                    string.Join("",
+                    string.Join(",",
                         recordset.Select(
                             column =>
-                                string.Format("public global::{0} {1}", column.ClrTypeName,
+                                string.Format("global::{0} {1}", column.ClrTypeName,
                                     Tools.CleanName(column.ColumnName).Substring(0, 1).ToLowerInvariant() +
                                     Tools.CleanName(column.ColumnName).Substring(1)))),
                     string.Join("",
@@ -359,9 +445,19 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
         {
             return
                 string.Format(
-                    "public class ParametersCollection {{{0}}}public ParametersCollection Parameters {{get;private set;}}",
-                    parameters.Select(
-                        p => string.Format("global::{0} {1} {{get;private set;}}", p.ClrTypeName, p.ParameterName)));
+                    "public class ParametersCollection {{{0}public ParametersCollection({1}){{{2}}}}}public ParametersCollection Parameters {{get;private set;}}",
+                    string.Join("", parameters.Select(
+                        p =>
+                            string.Format("public global::{0} {1} {{get;private set;}}", p.ClrTypeName, p.ParameterName))),
+                    string.Join(",", parameters.Select(
+                        p =>
+                            string.Format("global::{0} {1}", p.ClrTypeName,
+                                p.ParameterName.Substring(0, 1).ToLower() + p.ParameterName.Substring(1)))),
+                    string.Join("", parameters.Select(
+                        p =>
+                            string.Format("this.{0} = {1};", p.ParameterName,
+                                p.ParameterName.Substring(0, 1).ToLower() + p.ParameterName.Substring(1))))
+                    );
         }
     }
 }
