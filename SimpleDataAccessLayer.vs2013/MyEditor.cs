@@ -20,7 +20,7 @@ namespace SimpleDataAccessLayer_vs2013
 	{
 	    private SimpleDataAccessLayer_vs2013Package _package;
 	    private Dictionary<string, string> _connectionStrings;
-		string _fileName;
+		private string _fileName, _configurationFilename;
 
 		internal DalConfig Config { get; private set; }
 
@@ -34,17 +34,17 @@ namespace SimpleDataAccessLayer_vs2013
 		{
 			Project project = package.GetEnvDTE().Solution.FindProjectItem(fileName).ContainingProject;
 
-            var configurationFilename = (from ProjectItem item in project.ProjectItems
+            _configurationFilename = (from ProjectItem item in project.ProjectItems
                 where Regex.IsMatch(item.Name, "(app|web).config", RegexOptions.IgnoreCase)
                 select item.FileNames[0]).FirstOrDefault();
 
             // examine each project item's filename looking for app.config or web.config
             var returnValue = new Dictionary<string, string>();
 
-			if (!string.IsNullOrEmpty(configurationFilename))
+			if (!string.IsNullOrEmpty(_configurationFilename))
 			{
 				// found it, map it and expose salient members as properties
-			    var configFile = new ExeConfigurationFileMap {ExeConfigFilename = configurationFilename};
+			    var configFile = new ExeConfigurationFileMap {ExeConfigFilename = _configurationFilename};
 			    var configuration = System.Configuration.ConfigurationManager.OpenMappedExeConfiguration(configFile, ConfigurationUserLevel.None);
 
 				foreach (ConnectionStringSettings connStringSettings in configuration.ConnectionStrings.ConnectionStrings)
