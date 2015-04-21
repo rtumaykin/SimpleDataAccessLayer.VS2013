@@ -19,209 +19,15 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
     {
 
         private readonly DalConfig _config;
-        private readonly string _designerConnectionString;
+        private readonly ISqlRepository _sqlRepository;
 
-        public Procedure(DalConfig config, string designerConnectionString)
+        public Procedure(DalConfig config, ISqlRepository sqlRepository)
         {
             _config = config;
-            _designerConnectionString = designerConnectionString;
+            if (sqlRepository == null)
+                throw new ArgumentNullException("sqlRepository");
+            _sqlRepository = sqlRepository;
 		}
-
-        private IList<ProcedureParameter> GetProcedureParameterCollection(string objectSchemaName, string objectName)
-        {
-            var fullObjectName = Tools.QuoteName(objectSchemaName) + "." + Tools.QuoteName(objectName);
-            var retValue = new List<ProcedureParameter>();
-
-            using (var conn = new SqlConnection(_designerConnectionString))
-            {
-                conn.Open();
-
-                using (var cmd = conn.CreateCommand())
-                {
-                    cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.CommandText = "sp_executesql";
-
-                    const string stmt = @"
-                            SELECT 
-	                            p.[name] AS ParameterName,
-	                            p.[max_length] AS MaxByteLength,
-	                            p.[precision] AS [Precision],
-	                            p.[scale] AS Scale,
-	                            p.[is_output] AS IsOutputParameter,
-	                            ISNULL(st.name, t.[name]) AS TypeName,
-	                            SCHEMA_NAME(t.[schema_id]) AS TypeSchemaName,
-	                            t.is_table_type
-                            FROM sys.[parameters] p
-	                            INNER JOIN sys.[types] t
-		                            ON	t.[user_type_id] = p.[user_type_id]
-	                            LEFT OUTER JOIN sys.[types] st
-		                            ON	st.user_type_id = p.[system_type_id]
-                            WHERE p.[object_id] = OBJECT_ID(@ObjectName);
-					";
-
-                    cmd.Parameters.AddWithValue("@stmt", stmt);
-                    cmd.Parameters.AddWithValue("@params", "@ObjectName sysname");
-                    cmd.Parameters.AddWithValue("@ObjectName", fullObjectName);
-
-                    using (var reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            // Remove @ from the beginning of the parameter
-                            var parameterName = reader.GetSqlString(0).Value.Substring(1);
-                            var sqlTypeName = reader.GetSqlString(5).Value;
-                            int maxByteLength = reader.GetSqlInt16(1).Value;
-                            var precision = reader.GetSqlByte(2).Value;
-                            var scale = reader.GetSqlByte(3).Value;
-                            var isOutputParameter = reader.GetSqlBoolean(4).Value;
-                            var schemaName = reader.GetSqlString(6).Value;
-                            var isTableType = reader.GetSqlBoolean(7).Value;
-
-                            var clrTypeName = schemaName == "sys"
-                                ? Tools.ClrTypeName(sqlTypeName)
-                                : string.Format("{0}.TableVariables.{1}.{2}", _config.Namespace, Tools.CleanName(schemaName), Tools.CleanName(sqlTypeName));
-
-                            if (!string.IsNullOrWhiteSpace(clrTypeName) || isTableType)
-                            {
-                                retValue.Add(new ProcedureParameter(parameterName, maxByteLength, precision, scale,
-                                    isOutputParameter,
-                                    schemaName == "sys"
-                                        ? sqlTypeName
-                                        : string.Format("{0}.{1}", Tools.QuoteName(schemaName),
-                                            Tools.QuoteName(sqlTypeName)),
-                                    isTableType,
-                                    clrTypeName));
-                            }
-                        }
-                    }
-                }
-            }
-            return retValue;
-        }
-
-        private byte GetDatabaseCompatibilityLevel()
-        {
-            byte retValue;
-            using (var conn = new SqlConnection(_designerConnectionString))
-            {
-                conn.Open();
-
-                try
-                {
-                    using (var cmd = conn.CreateCommand())
-                    {
-                        cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.CommandText = "sp_executesql";
-                        cmd.Parameters.AddWithValue("@stmt",
-                            @"SELECT @CompatibilityLevel = [compatibility_level] FROM sys.[databases] WHERE [database_id] = DB_ID();");
-                        cmd.Parameters.AddWithValue("@params", "@CompatibilityLevel tinyint OUTPUT");
-                        cmd.Parameters.Add(new SqlParameter("@CompatibilityLevel", SqlDbType.TinyInt)
-                        {
-                            Direction = ParameterDirection.Output
-                        });
-                        cmd.ExecuteNonQuery();
-                        retValue = (byte)cmd.Parameters["@CompatibilityLevel"].Value;
-                    }
-                }
-                catch // (Exception e)
-                {
-                    retValue = 0;
-                }
-            }
-            return retValue;
-        }
-
-        private IList<List<ProcedureResultSetColumn>> GetProcedureResultSetColumnCollection(string objectSchemaName,
-            string objectName)
-        {
-            // SQL 2012 still can use FMTONLY so this is only for the higher versions 
-            if (GetDatabaseCompatibilityLevel() > 110)
-            {
-                return GetProcedureResultSetColumnCollection2014(objectSchemaName, objectName);
-            }
-            else
-            {
-                return GetProcedureResultSetColumnCollection2005(objectSchemaName, objectName);
-            }
-        }
-
-        private IList<List<ProcedureResultSetColumn>> GetProcedureResultSetColumnCollection2005(string objectSchemaName,
-            string objectName)
-        {
-            var fullObjectName = Tools.QuoteName(objectSchemaName) + "." + Tools.QuoteName(objectName);
-            var retValue = new List<List<ProcedureResultSetColumn>>();
-            try
-            {
-                var sb = new SqlConnectionStringBuilder(_designerConnectionString);
-                var conn = sb.IntegratedSecurity
-                    ? new ServerConnection(sb.DataSource)
-                    : new ServerConnection(sb.DataSource, sb.UserID, sb.Password);
-                conn.DatabaseName = sb.InitialCatalog;
-                var procedureCall = "EXEC " + fullObjectName;
-                var isFirstParam = true;
-                foreach (var param in GetProcedureParameterCollection(objectSchemaName, objectName))
-                {
-                    procedureCall += (isFirstParam ? " " : ", ") + "@" + param.ParameterName + " = NULL";
-                    isFirstParam = false;
-                }
-
-                var ds = conn.ExecuteWithResults(new StringCollection() { "SET FMTONLY ON;", procedureCall + ";" });
-                retValue.AddRange(from DataTable dt in ds[1].Tables
-                                  select
-                                      (from DataColumn column in dt.Columns
-                                       select new ProcedureResultSetColumn(column.ColumnName, column.DataType.FullName)).ToList());
-            }
-            catch
-            {
-                // Whatever happens just don't return anything
-                return new List<List<ProcedureResultSetColumn>>();
-            }
-            // GetProcedureParameterCollection
-            return retValue;
-        }
-
-        private IList<List<ProcedureResultSetColumn>> GetProcedureResultSetColumnCollection2014(string objectSchemaName,
-            string objectName)
-        {
-            var firstRecordset = new List<ProcedureResultSetColumn>();
-            var fullObjectName = Tools.QuoteName(objectSchemaName) + "." + Tools.QuoteName(objectName);
-
-            using (var conn = new SqlConnection(_designerConnectionString))
-            {
-                conn.Open();
-
-                using (var cmd = conn.CreateCommand())
-                {
-                    cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.CommandText = "sp_executesql";
-                    cmd.Parameters.AddWithValue("@stmt", @"
-				SELECT 
-					c.[name] AS ColumnName,
-					c.[precision],
-					c.[scale],
-					ISNULL(t.[name], tu.[name]) AS TypeName 
-				FROM sys.[dm_exec_describe_first_result_set_for_object](OBJECT_ID(@ObjectFullName), 0) c
-					LEFT OUTER JOIN sys.[types] t
-						ON	t.[user_type_id] = c.[system_type_id]
-					LEFT OUTER JOIN sys.[types] tu
-						ON	tu.[user_type_id] = c.[user_type_id]
-				WHERE c.name IS NOT NULL");
-                    cmd.Parameters.AddWithValue("@params", "@ObjectFullName sysname");
-                    cmd.Parameters.AddWithValue("@ObjectFullName", fullObjectName);
-                    using (var reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            firstRecordset.Add(new ProcedureResultSetColumn(reader.GetSqlString(0).Value,
-                                Tools.ClrTypeName(reader.GetSqlString(3).Value)));
-
-                        }
-                    }
-                }
-            }
-
-            return new List<List<ProcedureResultSetColumn>> { firstRecordset };
-        }
 
         public string GetCode()
         {
@@ -246,8 +52,8 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
 
         private string GetProcedureBodyCode(SimpleDataAccessLayer_vs2013.Procedure proc)
         {
-            var parameters = GetProcedureParameterCollection(proc.Schema, proc.ProcedureName);
-            var recordsets = GetProcedureResultSetColumnCollection(proc.Schema, proc.ProcedureName);
+            var parameters = _sqlRepository.GetProcedureParameterCollection(proc.Schema, proc.ProcedureName);
+            var recordsets = _sqlRepository.GetProcedureResultSetColumnCollection(proc.Schema, proc.ProcedureName);
 
             return string.Format("{0}public global::System.Int32 ReturnValue {{get; private set;}}{1}{2}",
                 GetParameterCollectionCode(parameters),
@@ -260,15 +66,19 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
             return string.Join("",
                 new[] {true, false}.Select(
                     async =>
-                        string.Format("public static {0}{1}{2} Execute{3} ({4}, {5}.ExecutionScope executionScope = null){{{6}}}/*end*/",
+                        string.Format(
+                            "public static {0}{1}{2} Execute{3} ({4} {5}.ExecutionScope executionScope = null){{{6}}}/*end*/",
                             async ? "async global::System.Threading.Tasks.Task<" : "",
                             Tools.CleanName(proc.ProcedureName),
                             async ? ">" : "",
                             async ? "Async" : "",
-                            string.Join(",",
+                            string.Join("",
                                 parameters.Select(
                                     parameter =>
-                                        string.Format("{0} {1}", parameter.ClrTypeName, parameter.ParameterName))),
+                                        string.Format("global::{0} {1},",
+                                            parameter.IsTableType
+                                                ? string.Format("{0}.{1}", _config.Namespace, parameter.ClrTypeName)
+                                                : parameter.ClrTypeName, parameter.AsLocalVariableName))),
                             _config.Namespace,
                             GetExecuteBodyCode(async, parameters, recordsets, proc)
                             )));
@@ -303,7 +113,7 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
                 string.Join("", parameters.Select(p => p.IsTableType
                     ? string.Format(
                         "cmd.Parameters.Add(new global::System.Data.SqlClient.SqlParameter(\"@{0}\", global::System.Data.SqlDbType.Structured) {{TypeName = \"{1}\", Value = {2}.GetDataTable()}});",
-                        p.ParameterName, p.SqlTypeName, p.ParameterName.Substring(0, 1) + p.ParameterName.Substring(1))
+                        p.ParameterName, p.SqlTypeName, p.AsLocalVariableName)
                     : string.Format(
                         "cmd.Parameters.Add(new global::System.Data.SqlClient.SqlParameter(\"@{0}\", global::System.Data.SqlDbType.{1}, {2}, global::System.Data.ParameterDirection.{3}, true, {4}, {5}, null, global::System.Data.DataRowVersion.Default, {6}){{{7}}});",
                         p.ParameterName,
@@ -314,13 +124,13 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
                         p.IsOutputParameter ? "Output" : "Input",
                         p.Precision,
                         p.Scale,
-                        p.ParameterName.Substring(0, 1) + p.ParameterName.Substring(1),
+                        p.AsLocalVariableName,
                         "geography hierarchyid geometry".Split(' ').Contains(p.SqlTypeName)
                             ? string.Format("UdtTypeName = \"{0}\"", p.SqlTypeName)
                             : ""
                         ))) +
                 "cmd.Parameters.Add(new global::System.Data.SqlClient.SqlParameter(\"@ReturnValue\", global::System.Data.SqlDbType.Int, 4, global::System.Data.ParameterDirection.ReturnValue, true, 0, 0, null, global::System.Data.DataRowVersion.Default, global::System.DBNull.Value));" +
-                (recordsets.Count > 0
+                (recordsets.Count == 0
                     ? string.Format("{0} cmd.ExecuteNonQuery{1}();",
                         async ? "await" : "",
                         async ? "Async" : "")
@@ -337,7 +147,7 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
                             string.Format(
                                 "cmd.Parameters[\"@{0}\"].Value == global::System.DBNull.Value ? null : (global::{1}) cmd.Parameters[\"@{0}\"].Value",
                                 parameter.ParameterName,
-                                parameter.ClrTypeName)))) +
+                                string.Format("{0}{1}", parameter.IsTableType ? _config.Namespace + "." : "", parameter.ClrTypeName))))) +
                 "retValue.ReturnValue = (global::System.Int32) cmd.Parameters[\"@ReturnValue\"].Value; " +
                 "return retValue;" +
                 "}" +
@@ -367,7 +177,8 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
             for (var rsNo = 0; rsNo < recordsets.Count; rsNo++)
             {
                 var recordset = recordsets[rsNo];
-                var internalCode = string.Format("retValue.Recordset{0} = new global::System.Collections.Generic.List<Record{0}>(); while ({1} reader.Read{1}()) {{{2}}}",
+                var internalCode = string.Format("retValue.Recordset{0} = new global::System.Collections.Generic.List<Record{0}>(); while ({1} reader.Read{2}()) {{{3}}}",
+                    rsNo,
                     async ? "await" : "",
                     async ? "Async" : "",
                     string.Format("retValue.Recordset{0}.Add(new Record{0}({1}));",
@@ -396,7 +207,7 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
             for (var colNo = 0; colNo < recordset.Count; colNo ++)
             {
                 var column = recordset[colNo];
-                code += string.Format("{4} reader.IsDBNull({0}) ? null : {1} reader.GetFieldValue<global::{3}>{2}({0})",
+                code += string.Format("{4} reader.IsDBNull({0}) ? null : {1} reader.GetFieldValue{2}<global::{3}>({0})",
                     colNo,
                     async ? "await" : "",
                     async ? "Async" : "",
@@ -447,16 +258,18 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
                 string.Format(
                     "public class ParametersCollection {{{0}public ParametersCollection({1}){{{2}}}}}public ParametersCollection Parameters {{get;private set;}}",
                     string.Join("", parameters.Select(
-                        p =>
-                            string.Format("public global::{0} {1} {{get;private set;}}", p.ClrTypeName, p.ParameterName))),
+                        p => 
+                            string.Format("public global::{0} {1} {{get;private set;}}",
+                                string.Format("{0}{1}", p.IsTableType ? _config.Namespace + "." : "", p.ClrTypeName), // for Clr type need to add current namespace
+                                p.ParameterName))),
                     string.Join(",", parameters.Select(
                         p =>
-                            string.Format("global::{0} {1}", p.ClrTypeName,
-                                p.ParameterName.Substring(0, 1).ToLower() + p.ParameterName.Substring(1)))),
+                            string.Format("global::{0} {1}", string.Format("{0}{1}", p.IsTableType ? _config.Namespace + "." : "", p.ClrTypeName),
+                                p.AsLocalVariableName))),
                     string.Join("", parameters.Select(
                         p =>
                             string.Format("this.{0} = {1};", p.ParameterName,
-                                p.ParameterName.Substring(0, 1).ToLower() + p.ParameterName.Substring(1))))
+                                p.AsLocalVariableName)))
                     );
         }
     }

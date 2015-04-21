@@ -160,9 +160,12 @@
     </Compile>
     <Compile Include="CodeBuilder\Common.cs" />
     <Compile Include="CodeBuilder\Enum.cs" />
+    <Compile Include="CodeBuilder\ISqlRepository.cs" />
+    <Compile Include="CodeBuilder\Main.cs" />
     <Compile Include="CodeBuilder\Procedure.cs" />
     <Compile Include="CodeBuilder\ProcedureParameter.cs" />
     <Compile Include="CodeBuilder\ProcedureResultSetColumn.cs" />
+    <Compile Include="CodeBuilder\SqlRepository.cs" />
     <Compile Include="CodeBuilder\TableValuedParameter.cs" />
     <Compile Include="CustomDirectiveProcessor.cs" />
     <Compile Include="DalConfig.cs" />
@@ -188,7 +191,6 @@
       <DependentUpon>EnumsTab.cs</DependentUpon>
     </Compile>
     <Compile Include="Guids.cs" />
-    <Compile Include="Helper.cs" />
     <Compile Include="ModelDesigner.cs">
       <SubType>Form</SubType>
     </Compile>

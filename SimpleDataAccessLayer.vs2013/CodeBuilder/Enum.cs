@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Data.SqlClient;
 using System.Linq;
 
 namespace SimpleDataAccessLayer_vs2013.CodeBuilder
@@ -13,13 +10,15 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
 #endif
     {
         private readonly DalConfig _config;
-        private readonly string _designerConnectionString;
+        private readonly ISqlRepository _sqlRepository;
 
-        public Enum(DalConfig config, string designerConnectionString)
+        public Enum(DalConfig config, ISqlRepository sqlRepository)
         {
             _config = config;
-            _designerConnectionString = designerConnectionString;
-		}
+            if (sqlRepository == null)
+                throw new ArgumentNullException("sqlRepository");
+            _sqlRepository = sqlRepository;
+        }
 
         public string GetCode()
         {
@@ -46,38 +45,8 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
         private string GetEnumBodyCode(SimpleDataAccessLayer_vs2013.Enum enumInfo)
         {
             return string.Join(",",
-                GetKeyValues(enumInfo.Schema, enumInfo.TableName, enumInfo.ValueColumn, enumInfo.KeyColumn)
-                    .Select(kv => string.Format("{0} = {1}", kv.Key, kv.Value)));
-        }
-
-        private IList<EnumKeyValue> GetKeyValues(string objectSchemaName, string objectName, string valueColumnName,
-            string keyColumnName)
-        {
-            var retValue = new List<EnumKeyValue>();
-            var fullObjectName = Tools.QuoteName(objectSchemaName) + "." + Tools.QuoteName(objectName);
-
-            using (var conn = new SqlConnection(_designerConnectionString))
-            {
-                conn.Open();
-                using (var cmd = conn.CreateCommand())
-                {
-                    cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.CommandText = "sp_executesql";
-
-                    cmd.Parameters.Add(new SqlParameter("@stmt",
-                        String.Format("SELECT CONVERT(bigint, {0}) AS [Value], {1} AS [Key] FROM {2} ORDER BY {0}",
-                            valueColumnName, keyColumnName, fullObjectName)));
-
-                    using (var reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            retValue.Add(new EnumKeyValue((string) reader["Key"], (long) reader["Value"]));
-                        }
-                    }
-                }
-            }
-            return retValue;
+                _sqlRepository.GetEnumKeyValues(enumInfo.Schema, enumInfo.TableName, enumInfo.ValueColumn, enumInfo.KeyColumn)
+                    .Select(kv => string.Format("{0} = {1}", Tools.CleanName(kv.Key), kv.Value)));
         }
     }
 }

@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using System.Xml;
 using EnvDTE;
+using SimpleDataAccessLayer_vs2013.CodeBuilder;
 using VSLangProj;
 using Configuration = System.Configuration.Configuration;
 
@@ -68,7 +69,21 @@ namespace SimpleDataAccessLayer_vs2013
 					_connectionStrings.Add(connectionStringName, modelDesignerDialog.ConnectionString);
 					//AddConnectionStringToProject(_connectionStringName, _modelDesignerDialog.ConnectionString);
 				}
-			}
+			    var dalItem = _package.GetEnvDTE().Solution.FindProjectItem(_fileName);
+
+                foreach (ProjectItem item in dalItem.ProjectItems)
+                {
+                    // there is only one child item with this extension
+                    if (item.Name.ToUpper().EndsWith(".cs".ToUpper()))
+                    {
+                        // this is the only file here
+                        var doc = (TextDocument)item.Document.Object("TextDocument");
+                        var start = doc.StartPoint.CreateEditPoint();
+                        var end = doc.EndPoint.CreateEditPoint();
+                        start.ReplaceText(end, new Main(Config, item).GetCode(), (int)vsFindOptions.vsFindOptionsNone);
+                    }
+                } 
+            }
 
 			InitControls();
 		}
@@ -88,14 +103,10 @@ namespace SimpleDataAccessLayer_vs2013
 			foreach (ProjectItem item in dalProjectItemChildren)
 			{
 				// there is only one child item with this extension
-				if (item.Name.ToUpper().EndsWith(".tt".ToUpper()))
+				if (item.Name.ToUpper().EndsWith(".cs".ToUpper()))
 				{
-					var pi = item.Object as VSProjectItem;
-
-					var prop = item.Properties.OfType<Property>().FirstOrDefault(p => p.Name == "CustomTool");
-
-					if (prop != null && pi != null)
-						pi.RunCustomTool();
+                    // this is the only file here
+                    item.Save();
 				}
 			}
 

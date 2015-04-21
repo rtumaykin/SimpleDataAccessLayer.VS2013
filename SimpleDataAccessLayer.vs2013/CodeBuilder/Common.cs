@@ -7,13 +7,11 @@
 #endif
     {
         private readonly DalConfig _config;
-        private readonly string _designerConnectionString;
 
-        public Common(DalConfig config, string designerConnectionString)
+        public Common(DalConfig config)
         {
             _config = config;
-            _designerConnectionString = designerConnectionString;
-		}
+        }
 
         public string GetCode()
         {

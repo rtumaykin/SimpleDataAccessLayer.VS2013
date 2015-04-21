@@ -29,5 +29,10 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
             IsTableType = isTableType;
             ClrTypeName = clrTypeName;
         }
+
+        public string AsLocalVariableName
+        {
+            get { return Tools.CleanName(ParameterName.Substring(0, 1).ToLowerInvariant() + ParameterName.Substring(1)); }
+        }
     }
 }

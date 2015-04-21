@@ -30,7 +30,7 @@
       </Reference>
     </References>
     <ProjectItem ItemType="Form" ReplaceParameters="true" TargetFileName="$fileinputname$.dal">DataAccessLayer.dal</ProjectItem>
-    <ProjectItem ReplaceParameters="true" TargetFileName="$fileinputname$.dal\$fileinputname$.tt">DataAccessLayer.tt</ProjectItem>
+    <ProjectItem ReplaceParameters="true" TargetFileName="$fileinputname$.dal\$fileinputname$.cs">DataAccessLayer.cs</ProjectItem>
   </TemplateContent>
   <!--WizardExtension>
     <Assembly>SimpleDataAccessLayer.vs2013.ItemTemplate.DeploymentWizard, Version=1.0.0.0, Culture=Neutral, PublicKeyToken=56468f4255e625d5</Assembly>

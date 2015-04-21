@@ -5,6 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using SimpleDataAccessLayer_vs2013;
+using SimpleDataAccessLayer_vs2013.CodeBuilder;
+using Procedure = SimpleDataAccessLayer_vs2013.Procedure;
 
 namespace UnitTests
 {
@@ -27,31 +29,47 @@ namespace UnitTests
                     new Procedure
                     {
                         Alias = null,
-                        ProcedureName = "GetSomething",
-                        Schema = "common"
+                        ProcedureName = "BatchUpdate",
+                        Schema = "asset"
+                    },
+                    new Procedure
+                    {
+                        Alias = null,
+                        ProcedureName = "GetEngineId",
+                        Schema = "calc"
+                    },
+                    new Procedure
+                    {
+                        Alias = null,
+                        ProcedureName = "GetSampleData",
+                        Schema = "calc"
                     }
+
                 },
                 Enums = new List<SimpleDataAccessLayer_vs2013.Enum>
                 {
                     new SimpleDataAccessLayer_vs2013.Enum
                     {
                         Alias = "",
-                        KeyColumn = "colName",
-                        Schema = "common",
-                        TableName = "Enum1",
-                        ValueColumn = "colId"
+                        KeyColumn = "Name",
+                        Schema = "asset",
+                        TableName = "Status",
+                        ValueColumn = "StatusId"
                     }
                 }
             };
 
-            var cStr = "Data Source=db-01;Initial Catalog=scratch;Integrated Security=True;Asynchronous Processing=True";
+            var cStr = "Data Source=db-01;Initial Catalog=RulesRepository;Integrated Security=True;Asynchronous Processing=True";
+
+            ISqlRepository sqlRepository = new SqlRepository(cStr);
 
             var code = string.Format("{0}{1}{2}{3}",
-                new SimpleDataAccessLayer_vs2013.CodeBuilder.Common(dal, cStr).GetCode(),
-                new SimpleDataAccessLayer_vs2013.CodeBuilder.TableValuedParameter(dal, cStr).GetCode(),
-                new SimpleDataAccessLayer_vs2013.CodeBuilder.Enum(dal, cStr).GetCode(),
-                new SimpleDataAccessLayer_vs2013.CodeBuilder.Procedure(dal, cStr).GetCode()
+                new SimpleDataAccessLayer_vs2013.CodeBuilder.Common(dal).GetCode(),
+                new SimpleDataAccessLayer_vs2013.CodeBuilder.TableValuedParameter(dal, sqlRepository).GetCode(),
+                new SimpleDataAccessLayer_vs2013.CodeBuilder.Enum(dal, sqlRepository).GetCode(),
+                new SimpleDataAccessLayer_vs2013.CodeBuilder.Procedure(dal, sqlRepository).GetCode()
                 );
+
 
             var z = code;
         }
