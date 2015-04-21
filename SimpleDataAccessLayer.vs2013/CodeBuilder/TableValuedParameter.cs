@@ -55,7 +55,7 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
             var code = "var dt = new global::System.Data.DataTable();\r";
             code += string.Join("\r",
                 columns.Select(
-                    column => string.Format("dt.Columns.Add(\"{0}\", typeof({1}));", column.ColumnName, column.ClrTypeName)));
+                    column => string.Format("dt.Columns.Add(\"{0}\", typeof({1}));", column.ColumnName, column.ClrTypeName.Replace("?", ""))));
 
             code +=
                 "dt.AcceptChanges();\r" +

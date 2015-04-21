@@ -61,8 +61,8 @@ namespace UnitTests
 
             var cStr = "Data Source=db-01;Initial Catalog=RulesRepository;Integrated Security=True;Asynchronous Processing=True";
 
+#if DEBUG
             ISqlRepository sqlRepository = new SqlRepository(cStr);
-
             var code = string.Format("{0}{1}{2}{3}",
                 new SimpleDataAccessLayer_vs2013.CodeBuilder.Common(dal).GetCode(),
                 new SimpleDataAccessLayer_vs2013.CodeBuilder.TableValuedParameter(dal, sqlRepository).GetCode(),
@@ -72,6 +72,7 @@ namespace UnitTests
 
 
             var z = code;
+#endif
         }
     }
 }

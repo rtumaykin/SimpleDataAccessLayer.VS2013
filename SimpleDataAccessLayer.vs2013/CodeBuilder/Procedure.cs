@@ -67,7 +67,7 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
                 new[] {true, false}.Select(
                     async =>
                         string.Format(
-                            "public static {0}{1}{2} Execute{3} ({4} global::{5}.ExecutionScope executionScope = null){{{6}}}/*end*/",
+                            "public static {0}{1}{2} Execute{3} ({4} global::{5}.ExecutionScope executionScope = null, global::System.Int32 commandTimeout = 30){{{6}}}/*end*/",
                             async ? "async global::System.Threading.Tasks.Task<" : "",
                             Tools.CleanName(proc.ProcedureName),
                             async ? ">" : "",
@@ -87,7 +87,7 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
         private string GetExecuteBodyCode(bool async, IList<ProcedureParameter> parameters, IList<List<ProcedureResultSetColumn>> recordsets, SimpleDataAccessLayer_vs2013.Procedure proc)
         {
             var code =
-                string.Format("var retValue = new {0}();", string.IsNullOrWhiteSpace(proc.Alias) ? proc.ProcedureName : proc.Alias) +
+                string.Format("var retValue = new {0}();", Tools.CleanName(string.IsNullOrWhiteSpace(proc.Alias) ? proc.ProcedureName : proc.Alias)) +
                 "{" +
                 "   var retryCycle = 0;" +
                 "   while (true) {" +
@@ -108,6 +108,7 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
                 "			cmd.CommandType = global::System.Data.CommandType.StoredProcedure;" +
                 "			if (executionScope != null && executionScope.Transaction != null)" +
                 "				cmd.Transaction = executionScope.Transaction;" +
+                "               cmd.CommandTimeout = commandTimeout;" +  
                 string.Format("			cmd.CommandText = \"{0}.{1}\";", Tools.QuoteName(proc.Schema),
                     Tools.QuoteName(proc.ProcedureName)) +
                 string.Join("", parameters.Select(p => p.IsTableType
@@ -144,10 +145,14 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
                     ", ",
                     parameters.Select(
                         parameter =>
+                            // only copy from these the output parameters. Everything else shoud just be coming from the input params
+                            parameter.IsOutputParameter ?
                             string.Format(
                                 "cmd.Parameters[\"@{0}\"].Value == global::System.DBNull.Value ? null : (global::{1}) cmd.Parameters[\"@{0}\"].Value",
                                 parameter.ParameterName,
-                                string.Format("{0}{1}", parameter.IsTableType ? _config.Namespace + "." : "", parameter.ClrTypeName))))) +
+                                string.Format("{0}{1}", parameter.IsTableType ? _config.Namespace + "." : "", parameter.ClrTypeName)):
+                                parameter.AsLocalVariableName
+                    ))) +
                 "retValue.ReturnValue = (global::System.Int32) cmd.Parameters[\"@ReturnValue\"].Value; " +
                 "return retValue;" +
                 "}" +
