@@ -69,20 +69,7 @@ namespace SimpleDataAccessLayer_vs2013
 					_connectionStrings.Add(connectionStringName, modelDesignerDialog.ConnectionString);
 					//AddConnectionStringToProject(_connectionStringName, _modelDesignerDialog.ConnectionString);
 				}
-			    var dalItem = _package.GetEnvDTE().Solution.FindProjectItem(_fileName);
-
-                foreach (ProjectItem item in dalItem.ProjectItems)
-                {
-                    // there is only one child item with this extension
-                    if (item.Name.ToUpper().EndsWith(".cs".ToUpper()))
-                    {
-                        // this is the only file here
-                        var doc = (TextDocument)item.Document.Object("TextDocument");
-                        var start = doc.StartPoint.CreateEditPoint();
-                        var end = doc.EndPoint.CreateEditPoint();
-                        start.ReplaceText(end, new Main(Config, item).GetCode(), (int)vsFindOptions.vsFindOptionsNone);
-                    }
-                } 
+                SaveConfig(_fileName);
             }
 
 			InitControls();
@@ -106,6 +93,13 @@ namespace SimpleDataAccessLayer_vs2013
 				if (item.Name.ToUpper().EndsWith(".cs".ToUpper()))
 				{
                     // this is the only file here
+                    // this is so that I can undo later.
+                    if (!item.IsOpen)
+                        item.Open();
+                    var doc = (TextDocument)item.Document.Object("TextDocument");
+                    var start = doc.StartPoint.CreateEditPoint();
+                    var end = doc.EndPoint.CreateEditPoint();
+                    start.ReplaceText(end, new Main(Config, item).GetCode(), (int)vsFindOptions.vsFindOptionsNone);
                     item.Save();
 				}
 			}

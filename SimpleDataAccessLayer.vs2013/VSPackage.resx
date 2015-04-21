@@ -120,6 +120,9 @@
   <data name="100" xml:space="preserve">
     <value>[Read Only]</value>
   </data>
+  <data name="101" xml:space="preserve">
+    <value>File has been changed outside the environment. Reload the new file?</value>
+  </data>
   <data name="102" xml:space="preserve">
     <value>Simple Data Access Layer Config File Editor</value>
     <comment>Name of the editor to show for the Keybindings</comment>

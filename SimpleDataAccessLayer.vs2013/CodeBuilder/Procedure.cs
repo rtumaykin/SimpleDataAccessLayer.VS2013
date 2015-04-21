@@ -67,7 +67,7 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
                 new[] {true, false}.Select(
                     async =>
                         string.Format(
-                            "public static {0}{1}{2} Execute{3} ({4} {5}.ExecutionScope executionScope = null){{{6}}}/*end*/",
+                            "public static {0}{1}{2} Execute{3} ({4} global::{5}.ExecutionScope executionScope = null){{{6}}}/*end*/",
                             async ? "async global::System.Threading.Tasks.Task<" : "",
                             Tools.CleanName(proc.ProcedureName),
                             async ? ">" : "",
