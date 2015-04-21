@@ -11,6 +11,8 @@ TestResults
 # User-specific files
 *.suo
 *.user
+# Do not ignore user settings for this project
+!SimpleDataAccessLayer.vs2013.csproj.user
 *.sln.docstates
 
 # Build results
@@ -80,6 +82,11 @@ publish
 
 # NuGet Packages Directory
 packages
+#do not ignore Nuget itself
+!NuGet.exe
+
+# Do not ignore included packages
+!Packages\*.nupkg
 
 # Windows Azure Build Output
 csx
