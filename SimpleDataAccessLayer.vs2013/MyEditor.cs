@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using System.Xml;
 using EnvDTE;
+using ICSharpCode.NRefactory.CSharp;
 using SimpleDataAccessLayer_vs2013.CodeBuilder;
 using VSLangProj;
 using Configuration = System.Configuration.Configuration;
@@ -99,7 +100,30 @@ namespace SimpleDataAccessLayer_vs2013
                     var doc = (TextDocument)item.Document.Object("TextDocument");
                     var start = doc.StartPoint.CreateEditPoint();
                     var end = doc.EndPoint.CreateEditPoint();
-                    start.ReplaceText(end, new Main(Config, item).GetCode(), (int)vsFindOptions.vsFindOptionsNone);
+                    var formattingOptions = FormattingOptionsFactory.CreateAllman();
+                    formattingOptions.AlignElseInIfStatements = true;
+                    formattingOptions.ArrayInitializerWrapping = Wrapping.WrapIfTooLong;
+                    formattingOptions.ChainedMethodCallWrapping = Wrapping.WrapIfTooLong;
+				    formattingOptions.AutoPropertyFormatting = PropertyFormatting.ForceOneLine;
+				    formattingOptions.IndexerArgumentWrapping = Wrapping.WrapIfTooLong;
+                    formattingOptions.IndexerClosingBracketOnNewLine = NewLinePlacement.SameLine;
+                    formattingOptions.IndexerDeclarationClosingBracketOnNewLine = NewLinePlacement.SameLine;
+                    formattingOptions.IndexerDeclarationParameterWrapping = Wrapping.WrapIfTooLong;
+                    formattingOptions.MethodCallArgumentWrapping = Wrapping.WrapIfTooLong;
+                    formattingOptions.MethodCallClosingParenthesesOnNewLine = NewLinePlacement.SameLine;
+                    formattingOptions.MethodDeclarationClosingParenthesesOnNewLine = NewLinePlacement.SameLine;
+                    formattingOptions.MethodDeclarationParameterWrapping = Wrapping.WrapIfTooLong;
+
+                    formattingOptions.NewLineAferIndexerDeclarationOpenBracket = NewLinePlacement.SameLine;
+                    formattingOptions.NewLineAferIndexerOpenBracket = NewLinePlacement.SameLine;
+                    formattingOptions.NewLineAferMethodCallOpenParentheses = NewLinePlacement.SameLine;
+                    formattingOptions.NewLineAferMethodDeclarationOpenParentheses = NewLinePlacement.SameLine;
+
+
+
+
+				    var formattedCode = new CSharpFormatter(FormattingOptionsFactory.CreateAllman()).Format(new Main(Config, item).GetCode());
+                    start.ReplaceText(end,formattedCode, (int)vsFindOptions.vsFindOptionsNone);
                     item.Save();
 				}
 			}

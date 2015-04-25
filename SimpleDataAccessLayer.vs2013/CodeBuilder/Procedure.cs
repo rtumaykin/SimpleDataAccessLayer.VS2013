@@ -47,7 +47,8 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
                     .Select(
                         proc =>
                             string.Format("public class {0}{{{1}}}",
-                                Tools.CleanName(string.IsNullOrWhiteSpace(proc.Alias) ? proc.ProcedureName : proc.Alias), GetProcedureBodyCode(proc))));
+                                Tools.CleanName(string.IsNullOrWhiteSpace(proc.Alias) ? proc.ProcedureName : proc.Alias), 
+                                GetProcedureBodyCode(proc))));
         }
 
         private string GetProcedureBodyCode(SimpleDataAccessLayer_vs2013.Procedure proc)
