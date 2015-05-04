@@ -34,7 +34,7 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
             return string.Join("", tableTypes.Select(tt => string.Format("namespace {0}.{1}.{2} {{{3}}}",
                 _config.Namespace,
                 "TableVariables",
-                Tools.CleanName(tt.SchemaName),
+                Tools.ValidIdentifier(tt.SchemaName),
                 string.Join("",
                     tableTypes.Where(ttn => ttn.SchemaName == tt.SchemaName)
                         .Select(ttn =>
@@ -43,7 +43,7 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
                             return string.Format(
                                 "public class {0}Row {{{1}}}" +
                                 "public class {0} : global::System.Collections.Generic.List<{0}Row> {{public {0} (global::System.Collections.Generic.IEnumerable<{0}Row> collection) : base(collection){{}}internal global::System.Data.DataTable GetDataTable() {{{2}}}}}",
-                                Tools.CleanName(ttn.Name),
+                                Tools.ValidIdentifier(ttn.Name),
                                 GetCodeForTableTypeColumns(ttn, columns),
                                 GetCodeForDataTableConversion(columns));
                         }))
@@ -75,9 +75,9 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
         private string GetCodeForTableTypeColumns(TableType tableType, IList<TableTypeColumn> columns)
         {
             var code = string.Join("\r", columns.Select(
-                column => string.Format("public global::{0} {1} {{ get; private set; }}\r", column.ClrTypeName, Tools.CleanName(column.ColumnName))));
+                column => string.Format("public global::{0} {1} {{ get; private set; }}\r", column.ClrTypeName, Tools.ValidIdentifier(column.ColumnName))));
 
-            code += string.Format("public {0}Row({1}) {{{2}}}\r", Tools.CleanName(tableType.Name),
+            code += string.Format("public {0}Row({1}) {{{2}}}\r", Tools.ValidIdentifier(tableType.Name),
                  string.Join(", ", columns.Select(column => string.Format("global::{0} {1}", column.ClrTypeName, column.ColumnName.Substring(0, 1).ToLower() + column.ColumnName.Substring(1)))),
                  string.Join("\r", columns.Select(column => string.Format("this.{0} = {1};", column.ColumnName, column.ColumnName.Substring(0, 1).ToLower() + column.ColumnName.Substring(1))))
                 );

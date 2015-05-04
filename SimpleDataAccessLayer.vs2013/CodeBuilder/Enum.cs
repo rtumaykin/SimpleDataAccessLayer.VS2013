@@ -39,14 +39,14 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
                     .Select(
                         e =>
                             string.Format("public enum {0}{{{1}}}",
-                                Tools.CleanName(string.IsNullOrWhiteSpace(e.Alias) ? e.TableName : e.Alias), GetEnumBodyCode(e))));
+                                Tools.ValidIdentifier(string.IsNullOrWhiteSpace(e.Alias) ? e.TableName : e.Alias), GetEnumBodyCode(e))));
         }
 
         private string GetEnumBodyCode(SimpleDataAccessLayer_vs2013.Enum enumInfo)
         {
             return string.Join(",",
                 _sqlRepository.GetEnumKeyValues(enumInfo.Schema, enumInfo.TableName, enumInfo.ValueColumn, enumInfo.KeyColumn)
-                    .Select(kv => string.Format("{0} = {1}", Tools.CleanName(kv.Key), kv.Value)));
+                    .Select(kv => string.Format("{0} = {1}", Tools.ValidIdentifier(kv.Key), kv.Value)));
         }
     }
 }

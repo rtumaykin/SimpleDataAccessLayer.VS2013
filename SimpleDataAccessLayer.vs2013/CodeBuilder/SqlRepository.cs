@@ -105,7 +105,7 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
 
                             var clrTypeName = schemaName == "sys"
                                 ? Tools.ClrTypeName(sqlTypeName)
-                                : string.Format("TableVariables.{0}.{1}", Tools.CleanName(schemaName), Tools.CleanName(sqlTypeName));
+                                : string.Format("TableVariables.{0}.{1}", Tools.ValidIdentifier(schemaName), Tools.ValidIdentifier(sqlTypeName));
 
                             if (!string.IsNullOrWhiteSpace(clrTypeName) || isTableType)
                             {

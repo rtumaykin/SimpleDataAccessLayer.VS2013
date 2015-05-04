@@ -32,7 +32,7 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
 
         public string AsLocalVariableName
         {
-            get { return Tools.CleanName(ParameterName.Substring(0, 1).ToLowerInvariant() + ParameterName.Substring(1)); }
+            get { return Tools.ValidIdentifier(ParameterName.Substring(0, 1).ToLowerInvariant() + ParameterName.Substring(1)); }
         }
     }
 }

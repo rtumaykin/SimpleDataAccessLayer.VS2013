@@ -47,7 +47,7 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
                     .Select(
                         proc =>
                             string.Format("public class {0}{{{1}}}",
-                                Tools.CleanName(string.IsNullOrWhiteSpace(proc.Alias) ? proc.ProcedureName : proc.Alias), 
+                                Tools.ValidIdentifier(string.IsNullOrWhiteSpace(proc.Alias) ? proc.ProcedureName : proc.Alias), 
                                 GetProcedureBodyCode(proc))));
         }
 
@@ -70,7 +70,7 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
                         string.Format(
                             "public static {0}{1}{2} Execute{3} ({4} global::{5}.ExecutionScope executionScope = null, global::System.Int32 commandTimeout = 30){{{6}}}/*end*/",
                             async ? "async global::System.Threading.Tasks.Task<" : "",
-                            Tools.CleanName(proc.ProcedureName),
+                            Tools.ValidIdentifier(proc.ProcedureName),
                             async ? ">" : "",
                             async ? "Async" : "",
                             string.Join("",
@@ -88,7 +88,7 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
         private string GetExecuteBodyCode(bool async, IList<ProcedureParameter> parameters, IList<List<ProcedureResultSetColumn>> recordsets, SimpleDataAccessLayer_vs2013.Procedure proc)
         {
             var code =
-                string.Format("var retValue = new {0}();", Tools.CleanName(string.IsNullOrWhiteSpace(proc.Alias) ? proc.ProcedureName : proc.Alias)) +
+                string.Format("var retValue = new {0}();", Tools.ValidIdentifier(string.IsNullOrWhiteSpace(proc.Alias) ? proc.ProcedureName : proc.Alias)) +
                 "{" +
                 "   var retryCycle = 0;" +
                 "   while (true) {" +
@@ -239,19 +239,19 @@ namespace SimpleDataAccessLayer_vs2013.CodeBuilder
                         recordset.Select(
                             column =>
                                 string.Format("public global::{0} {1} {{get; private set;}}", column.ClrTypeName,
-                                    Tools.CleanName(column.ColumnName)))),
+                                    Tools.ValidIdentifier(column.ColumnName)))),
                     string.Join(",",
                         recordset.Select(
                             column =>
                                 string.Format("global::{0} {1}", column.ClrTypeName,
-                                    Tools.CleanName(column.ColumnName).Substring(0, 1).ToLowerInvariant() +
-                                    Tools.CleanName(column.ColumnName).Substring(1)))),
+                                    Tools.ValidIdentifier(column.ColumnName).Substring(0, 1).ToLowerInvariant() +
+                                    Tools.ValidIdentifier(column.ColumnName).Substring(1)))),
                     string.Join("",
                         recordset.Select(
                             column =>
                                 string.Format("this.{0} = {1};", column.ColumnName,
-                                    Tools.CleanName(column.ColumnName).Substring(0, 1).ToLowerInvariant() +
-                                    Tools.CleanName(column.ColumnName).Substring(1))))
+                                    Tools.ValidIdentifier(column.ColumnName).Substring(0, 1).ToLowerInvariant() +
+                                    Tools.ValidIdentifier(column.ColumnName).Substring(1))))
                     );
             }
 

@@ -58,7 +58,7 @@ namespace SimpleDataAccessLayer_vs2013
 			return clrTypeName;
 		}
 
-		public static string CleanName(string name)
+		public static string ValidIdentifier(string name)
 		{
 			var rgx = new Regex("[^a-zA-Z0-9_]");
 			return rgx.Replace(name, "_");
